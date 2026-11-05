@@ -1,3 +1,5 @@
+use std::{u8, u16};
+
 use rand::Rng;
 
 pub struct Chip {
@@ -61,6 +63,15 @@ impl Chip {
         let opcode = self.fetch();
         
     }
+    pub fn tick_timer(&mut self) {
+        if self.delay_timer > 0 {
+            self.delay_timer -= 1;
+        }
+        if self.sound_timer > 0 {
+            self.sound_timer -= 1;
+            print!("\x07")
+        }
+    }
 
     fn fetch(&mut self) -> u16 {
         let hi = self.memory[self.pc as usize] as u16;
@@ -69,6 +80,14 @@ impl Chip {
         self.pc += 2;
 
         opcode
+    }
+
+    fn execute(&mut self, opcode: u16) {
+        let x = ((opcode & 0xF00) >> 8) as usize;
+        let y = ((opcode & 0x00F0) >> 4) as usize;
+        let n = (opcode & 0x000F) as u8;
+        let nn = (opcode & 0x00FF) as u8;
+        let nnn = opcode & 0x0FFF;
     }
 }
 
