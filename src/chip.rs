@@ -1,6 +1,5 @@
-use std::{u8, u16};
 
-use rand::Rng;
+use rand::RngExt;
 
 pub struct Chip {
     memory: [u8; 4096],
@@ -88,6 +87,98 @@ impl Chip {
         let n = (opcode & 0x000F) as u8;
         let nn = (opcode & 0x00FF) as u8;
         let nnn = opcode & 0x0FFF;
+    }
+
+    // ---- opcode ----
+
+    fn op_00e0(&mut self) {
+        self.display = [[false; 64]; 32];
+        self.draw_flag = true;
+    }
+    fn op_00ee(&mut self) {
+        self.sp -= 1;
+        self.pc = self.stack[self.sp];
+    }
+    fn op_1nnn(&mut self, nnn: u16) {
+        self.pc = nnn;
+    }
+    fn op_2nnn(&mut self, nnn: u16) {
+        self.stack[self.sp] = self.pc;
+        self.sp += 1;
+        self.pc = nnn;
+    }
+    fn op_3xnn(&mut self, x: usize, nn: u8) {
+        if self.v[x] == nn {
+            self.pc += 2;
+        }
+    }
+    fn op_4xnn(&mut self, x: usize, nn: u8) {
+        if self.v[x] != nn {
+            self.pc += 2;
+        }
+    }
+    fn op_5xy0(&mut self, x: usize, y: usize) {
+        if self.v[x] == self.v[y] {
+            self.pc += 2;
+        }
+    }
+    fn op_6xnn(&mut self, x: usize, nn: u8) {
+        self.v[x] = nn;
+    }
+    fn op_7xnn(&mut self, x: usize, nn: u8) {
+        self.v[x] = self.v[x].wrapping_add(nn);
+    }
+    fn op_8xy0(&mut self, x: usize, y: usize) {
+        self.v[x] = self.v[y];
+    }
+    fn op_8xy1(&mut self, x: usize, y: usize) {
+        self.v[x] |= self.v[y];
+    }
+    fn op_8xy2(&mut self, x: usize, y: usize) {
+        self.v[x] &= self.v[y];
+    }
+    fn op_8xy3(&mut self, x: usize, y: usize) {
+        self.v[x] ^= self.v[y];
+    }
+    fn op_8xy4(&mut self, x: usize, y: usize) {
+        let (sum, carry) = self.v[x].overflowing_add(self.v[y]);
+        self.v[x] = sum;
+        self.v[0xF] = if carry { 1 } else { 0 };
+    }
+    fn op_8xy5(&mut self, x: usize, y: usize) {
+        self.v[0xF] = if self.v[x] >= self.v[y] { 1 } else { 0 };
+        self.v[x] = self.v[x].wrapping_sub(self.v[y]);
+    }
+    fn op_8xy6(&mut self, x: usize) {
+        self.v[0xF] = self.v[x] & 1;
+        self.v[x] >>= 1;
+    }
+    fn op_8xy7(&mut self, x: usize, y: usize) {
+        self.v[0xF] = if self.v[y] >= self.v[x] { 1 } else { 0 };
+        self.v[x] = self.v[y].wrapping_sub(self.v[x]);
+    }
+    fn op_8xye(&mut self, x: usize) {
+        self.v[0xF] = (self.v[x] >> 7) & 1;
+        self.v[x] <<= 1;
+    }
+    fn op_9xy0(&mut self, x: usize, y: usize) {
+        if self.v[x] != self.v[y] {
+            self.pc += 2;
+        }
+    }
+    fn op_annn(&mut self, nnn: u16) {
+        self.i = nnn;
+    }
+    fn op_bnnn(&mut self, nnn: u16) {
+        self.pc = nnn + self.v[0] as u16;
+    }
+    fn op_cxnn(&mut self, x: usize, nn: u8) {
+        let mut rng = rand::rng();
+        self.v[x] = rng.random();
+        self.v[x] &= nn;
+    }
+    fn op_dxyn(&mut self, x: usize, y: usize, height: u8) {
+        
     }
 }
 
