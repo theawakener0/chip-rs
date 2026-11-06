@@ -1,4 +1,3 @@
-
 use rand::RngExt;
 
 pub struct Chip {
@@ -60,7 +59,7 @@ impl Chip {
         }
 
         let opcode = self.fetch();
-        
+        self.execute(opcode);
     }
     pub fn tick_timer(&mut self) {
         if self.delay_timer > 0 {
@@ -178,7 +177,77 @@ impl Chip {
         self.v[x] &= nn;
     }
     fn op_dxyn(&mut self, x: usize, y: usize, height: u8) {
-        
+        let vx = self.v[x] as usize % 64;
+        let vy = self.v[y] as usize % 32;
+        self.v[0xF] = 0;
+
+        for row in 0..height as usize {
+            if vy + row >= 32 {
+                break;
+            }
+            let sprite = self.memory[self.i as usize + row];
+            for col in 0..8 {
+                if vx + col >= 64 {
+                    break;
+                }
+                let bit = (sprite >> (7 - col)) & 1;
+                if bit == 1 {
+                    let pixel = &mut self.display[vy + row][vx + col];
+                    if *pixel {
+                        self.v[0xF] = 1;
+                    }
+                    *pixel ^= true;
+                }
+            }
+        }
+        self.draw_flag = true;
+    }
+    fn op_ex9e(&mut self, x: usize) {
+        if self.keys[self.v[x] as usize] {
+            self.pc += 2;
+        }
+    }
+    fn op_exa1(&mut self, x: usize) {
+        if !self.keys[self.v[x] as usize] {
+            self.pc += 2;
+        }
+    }
+    fn op_fx07(&mut self, x: usize) {
+        self.v[x] = self.delay_timer;
+    }
+    fn op_fx0a(&mut self, x: usize) {
+        self.waiting_for_key = Some(x);
+        self.pc -= 2;
+    }
+    fn op_fx15(&mut self, x: usize) {
+        self.delay_timer = self.v[x];
+    }
+    fn op_fx18(&mut self, x: usize) {
+        self.sound_timer = self.v[x];
+    }
+    fn op_fx1e(&mut self, x: usize) {
+        self.i = self.i.wrapping_add(self.v[x] as u16);
+    }
+    fn op_fx29(&mut self, x: usize) {
+        self.i = 0x50 + (self.v[x] as u16 * 5);
+    }
+    fn op_fx33(&mut self, x: usize) {
+        let val = self.v[x];
+        self.memory[self.i as usize] = val / 100;
+        self.memory[self.i as usize + 1] = (val / 10) % 10;
+        self.memory[self.i as usize + 2] = val % 10;
+    }
+    fn op_fx55(&mut self, x: usize) {
+        for i in 0..=x {
+            self.memory[self.i as usize + i] = self.v[i];
+        }
+        self.i += (x + 1) as u16;
+    }
+    fn op_fx65(&mut self, x: usize) {
+        for i in 0..=x {
+             self.v[i] = self.memory[self.i as usize + i];
+        }
+        self.i += (x + 1) as u16;
     }
 }
 
