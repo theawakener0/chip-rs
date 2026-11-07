@@ -86,6 +86,56 @@ impl Chip {
         let n = (opcode & 0x000F) as u8;
         let nn = (opcode & 0x00FF) as u8;
         let nnn = opcode & 0x0FFF;
+
+        match opcode & 0xF000 {
+             0x0000 => match nn {
+                 0xE0 => self.op_00e0(),
+                 0xEE => self.op_00ee(),
+                 _ => {}
+             },
+            0x1000 => self.op_1nnn(nnn),
+            0x2000 => self.op_2nnn(nnn),
+            0x3000 => self.op_3xnn(x, nn),
+            0x4000 => self.op_4xnn(x, nn),
+            0x5000 => self.op_5xy0(x, y),
+            0x6000 => self.op_6xnn(x, nn),
+            0x7000 => self.op_7xnn(x, nn),
+            0x8000 => match n {
+               0x0 => self.op_8xy0(x, y),
+                0x1 => self.op_8xy1(x, y),
+                0x2 => self.op_8xy2(x, y),
+                0x3 => self.op_8xy3(x, y),
+                0x4 => self.op_8xy4(x, y),
+                0x5 => self.op_5xy0(x, y),
+                0x6 => self.op_8xy6(x),
+                0x7 => self.op_8xy7(x, y),
+                0xE => self.op_8xye(x),
+                _ => {}
+            },
+            0x9000 => self.op_9xy0(x, y),
+            0xA000 => self.op_annn(nnn),
+            0xB000 => self.op_bnnn(nnn),
+            0xC000 => self.op_cxnn(x, nn),
+            0xD000 => self.op_dxyn(x, y, n),
+            0xE000 => match nn {
+                0x9E => self.op_ex9e(x),
+                0xA1 => self.op_exa1(x),
+                _ => {}
+            },
+            0xF000 => match nn {
+                0x07 => self.op_fx07(x),
+                0x0A => self.op_fx0a(x),
+                0x15 => self.op_fx15(x),
+                0x18 => self.op_fx18(x),
+                0x1E => self.op_fx1e(x),
+                0x29 => self.op_fx29(x),
+                0x33 => self.op_fx33(x),
+                0x55 => self.op_fx55(x),
+                0x65 => self.op_fx65(x),
+                _ => {}
+            },
+            _ => {}
+        }
     }
 
     // ---- opcode ----
