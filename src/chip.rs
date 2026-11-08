@@ -106,7 +106,7 @@ impl Chip {
                 0x2 => self.op_8xy2(x, y),
                 0x3 => self.op_8xy3(x, y),
                 0x4 => self.op_8xy4(x, y),
-                0x5 => self.op_5xy0(x, y),
+                0x5 => self.op_8xy5(x, y),
                 0x6 => self.op_8xy6(x),
                 0x7 => self.op_8xy7(x, y),
                 0xE => self.op_8xye(x),
