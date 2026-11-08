@@ -9,9 +9,9 @@ pub struct Chip {
     sp: usize,
     delay_timer: u8,
     sound_timer: u8,
-    display: [[bool; 64]; 32],
-    keys: [bool; 16],
-    draw_flag: bool,
+    pub display: [[bool; 64]; 32],
+    pub keys: [bool; 16],
+    pub draw_flag: bool,
     waiting_for_key: Option<usize>
 }
 
