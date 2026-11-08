@@ -85,11 +85,24 @@ impl Tui {
         self.terminal.draw(|f| {
             let area = f.area();
 
-            let mut lines = Vec::with_capacity(32);
-            for row in &chip.display {
+            let mut lines = Vec::with_capacity(16);
+            for y in (0..32).step_by(2) {
                 let mut s = String::with_capacity(64);
-                for &on in row {
-                    s.push(if on { '█' } else { ' ' });
+                for x in 0..64 {
+                    let top = chip.display[y][x];
+                    let bottom = if y + 1 < 32 {
+                        chip.display[y + 1][x]
+                    } else {
+                        false
+                    };
+
+                    let ch = match (top, bottom) {
+                        (true, true) => '█',
+                        (true, false) => '▀',
+                        (false, true) => '▄',
+                        (false, false) => ' ',
+                    };
+                    s.push(ch);
                 }
                 lines.push(Line::from(s));
             }
