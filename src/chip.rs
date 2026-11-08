@@ -145,6 +145,7 @@ impl Chip {
         self.draw_flag = true;
     }
     fn op_00ee(&mut self) {
+        if self.sp == 0 { return; }
         self.sp -= 1;
         self.pc = self.stack[self.sp];
     }
@@ -223,8 +224,7 @@ impl Chip {
     }
     fn op_cxnn(&mut self, x: usize, nn: u8) {
         let mut rng = rand::rng();
-        self.v[x] = rng.random();
-        self.v[x] &= nn;
+        self.v[x] = rng.random::<u8>() & nn;
     }
     fn op_dxyn(&mut self, x: usize, y: usize, height: u8) {
         let vx = self.v[x] as usize % 64;
