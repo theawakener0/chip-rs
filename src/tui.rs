@@ -104,12 +104,13 @@ impl Tui {
                     };
                     s.push(ch);
                 }
-                lines.push(Line::from(s));
+                lines.push(Line::from(s).fg(Color::Rgb(196, 85, 8)));
             }
 
             let block = Block::default()
                     .title(" CHIP-8 TUI ")
-                    .borders(Borders::ALL);
+                    .borders(Borders::ALL)
+                    .fg(Color::Rgb(196, 85, 8));
             let paragraph = Paragraph::new(lines).block(block);
             f.render_widget(paragraph, area);
         })?;
