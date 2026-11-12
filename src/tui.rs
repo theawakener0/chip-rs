@@ -38,7 +38,7 @@ impl Tui {
             cycles_per_frame: 10 
         })
     }
-    pub fn run(&mut self, chip: &mut Chip) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn run(&mut self, chip: &mut Chip, file: &Vec<u8>) -> Result<(), Box<dyn std::error::Error>> {
         loop {
             if self.poll_input(chip)? {
                 break;
@@ -56,7 +56,7 @@ impl Tui {
             if chip.draw_flag
                 || self.last_frame.elapsed() >= Duration::from_millis(1000 / self.target_fps)
             {
-                self.draw(chip)?;
+                self.draw(chip, file)?;
                 chip.draw_flag = false;
                 self.last_frame = Instant::now();
             }
@@ -81,7 +81,7 @@ impl Tui {
         }
         Ok(false)
     }
-    fn draw(&mut self, chip: &Chip) -> Result<(), Box<dyn std::error::Error>> {
+    fn draw(&mut self, chip: &Chip, file: &Vec<u8>) -> Result<(), Box<dyn std::error::Error>> {
         self.terminal.draw(|f| {
             let area = f.area();
 
@@ -112,7 +112,17 @@ impl Tui {
                     .borders(Borders::ALL)
                     .fg(Color::Rgb(196, 85, 8));
             let paragraph = Paragraph::new(lines).block(block);
+
+
+            let block2 = Block::default()
+                    .title(" File Preview ")
+                    .borders(Borders::ALL)
+                    .fg(Color::Rgb(196, 85, 8));
+            let file_content = String::from_utf8_lossy(file);
+            let paragraph2 = Paragraph::new(file_content).block(block2);
+
             f.render_widget(paragraph, area);
+            f.render_widget(paragraph2, area);
         })?;
         Ok(())
     }

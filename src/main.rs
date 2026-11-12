@@ -18,7 +18,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     chip.load_rom(&rom);
 
     let mut tui = Tui::new()?;
-    tui.run(&mut chip)?;
+    tui.run(&mut chip, &rom)?;
 
     Ok(())
 }
