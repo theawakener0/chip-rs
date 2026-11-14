@@ -9,8 +9,7 @@ use ratatui::{
     widgets::{Block, Borders, Paragraph},
 };
 use std::{
-    io::{stdout, Stdout},
-    time::{Duration, Instant},
+    io::{Stdout, stdout}, time::{Duration, Instant}
 };
 
 
@@ -38,7 +37,7 @@ impl Tui {
             cycles_per_frame: 10 
         })
     }
-    pub fn run(&mut self, chip: &mut Chip, file: &Vec<u8>) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn run(&mut self, chip: &mut Chip, file: &[u8]) -> Result<(), Box<dyn std::error::Error>> {
         loop {
             if self.poll_input(chip)? {
                 break;
@@ -81,9 +80,18 @@ impl Tui {
         }
         Ok(false)
     }
-    fn draw(&mut self, chip: &Chip, file: &Vec<u8>) -> Result<(), Box<dyn std::error::Error>> {
+    fn draw(&mut self, chip: &Chip, file: &[u8]) -> Result<(), Box<dyn std::error::Error>> {
         self.terminal.draw(|f| {
             let area = f.area();
+
+            let chunks = Layout::default()
+                .direction(Direction::Vertical)
+                .constraints([
+                    Constraint::Length(18),
+                    Constraint::Length(8),
+                    Constraint::Min(6),
+                ])
+                .split(area);
 
             let mut lines = Vec::with_capacity(16);
             for y in (0..32).step_by(2) {
@@ -107,22 +115,73 @@ impl Tui {
                 lines.push(Line::from(s).fg(Color::Rgb(196, 85, 8)));
             }
 
-            let block = Block::default()
+            let display_block = Block::default()
                     .title(" CHIP-8 TUI ")
                     .borders(Borders::ALL)
                     .fg(Color::Rgb(196, 85, 8));
-            let paragraph = Paragraph::new(lines).block(block);
+            let display_paragraph = Paragraph::new(lines).block(display_block);
+            f.render_widget(display_paragraph, chunks[0]);
 
+            let mut action_text = vec![
+                Line::from(format!("PC: {:04X}  I: {:04X}   Delay: {:02X}   Sound: {:02X}", 
+                chip.pc, chip.i, chip.delay_timer, chip.sound_timer)),
+                Line::from(""),
+            ];
+
+            let mut v_line1  = String::from("V0-V7: ");
+            let mut v_line2  = String::from("V8-VF: ");
+
+            for i in 0..8 {
+                v_line1.push_str(&format!("V{:X}={:02X} ", i, chip.v[i]));
+                v_line2.push_str(&format!("V{:X}={:02X} ", i + 8, chip.v[i + 8]));
+            }
+
+            action_text.push(Line::from(v_line1));
+            action_text.push(Line::from(v_line2));
+
+            let action_block = Block::default()
+                .title(" Action / State ")
+                .borders(Borders::ALL)
+                .fg(Color::Rgb(196, 85, 8));
+            let action_paragraph = Paragraph::new(action_text).block(action_block);
+            f.render_widget(action_paragraph, chunks[1]);
+
+            let mut code_lines = Vec::new();
+            let start = 0x200;
+            let dump_len = file.len().min(256);
+
+            for offset in (0..dump_len).step_by(16) {
+                let addr = start + offset;
+                let mut hex = String::new();
+                let mut ascii = String::new();
+
+                for i in 0..16 {
+                    if offset + i < file.len() {
+                        let b = file[offset + i];
+                        hex.push_str(&format!("{:02X} ", b));
+                        ascii.push(if (0x20..=0x7E).contains(&b) {b as char} else { '.' });
+                    } else {
+                        hex.push_str("  ");
+                        ascii.push(' ');
+                    }
+                }
+
+                let style = if addr <= (chip.pc as usize) && (chip.pc as usize) < addr + 16 {
+                    Style::default().fg(Color::Yellow)
+                } else {
+                    Style::default()
+                };
+
+                code_lines.push(Line::from(format!("{:04X}: {} {}", addr, hex, ascii)).style(style));
+            }
 
             let block2 = Block::default()
                     .title(" File Preview ")
                     .borders(Borders::ALL)
                     .fg(Color::Rgb(196, 85, 8));
-            let file_content = String::from_utf8_lossy(file);
-            let paragraph2 = Paragraph::new(file_content).block(block2);
+            let paragraph2 = Paragraph::new(code_lines).block(block2).scroll((0, 0));
 
-            f.render_widget(paragraph, area);
-            f.render_widget(paragraph2, area);
+            f.render_widget(paragraph2, chunks[2]);
         })?;
         Ok(())
     }

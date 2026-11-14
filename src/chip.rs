@@ -2,13 +2,13 @@ use rand::RngExt;
 
 pub struct Chip {
     memory: [u8; 4096],
-    v: [u8; 16],
-    i: u16,
-    pc: u16,
+    pub v: [u8; 16],
+    pub i: u16,
+    pub pc: u16,
     stack: [u16; 16],
     sp: usize,
-    delay_timer: u8,
-    sound_timer: u8,
+    pub delay_timer: u8,
+    pub sound_timer: u8,
     pub display: [[bool; 64]; 32],
     pub keys: [bool; 16],
     pub draw_flag: bool,
